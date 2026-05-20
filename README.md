@@ -14,7 +14,7 @@ This spam classifier uses Natural Language Processing (NLP) and Machine Learning
 - Male enhancement products
 - Lottery/prize scams
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 spam-classifier/
@@ -77,7 +77,7 @@ spam-classifier/
    - Evaluate performance
    - Save model to `models/`
 
-## 📊 Model Performance
+##  Model Performance
 
 The classifier achieves:
 - **High accuracy** on the test set
@@ -86,7 +86,7 @@ The classifier achieves:
 
 Detailed metrics are displayed after training.
 
-## 💻 Usage
+## Usage
 
 ### Interactive Prediction
 
@@ -171,7 +171,7 @@ Response:
 }
 ```
 
-## 🐳 Docker Deployment
+##  Docker Deployment
 
 Build the Docker image:
 
@@ -187,7 +187,7 @@ docker run -p 5000:5000 spam-classifier
 
 The API will be accessible at `http://localhost:5000`
 
-## 🧪 Running Tests
+##  Running Tests
 
 Execute the unit tests:
 
@@ -200,7 +200,7 @@ This will test:
 - Model prediction capabilities
 - API functionality
 
-## 📈 Exploratory Data Analysis
+## Exploratory Data Analysis
 
 Open the Jupyter notebook to explore the dataset:
 
@@ -216,7 +216,7 @@ The notebook includes:
 - Word clouds
 - Pattern analysis (URLs, phone numbers, money amounts, etc.)
 
-## 🔧 Customization
+## Customization
 
 ### Adjusting Model Parameters
 
@@ -234,7 +234,7 @@ You can enhance the preprocessor in `src/preprocess.py` to:
 - Implement stemming or lemmatization
 - Extract custom features
 
-## 📝 Dataset Information
+##  Dataset Information
 
 - **Size:** 100,000 emails
 - **Features:** 
@@ -247,14 +247,14 @@ You can enhance the preprocessor in `src/preprocess.py` to:
   - Spam messages: ~70%
   - Ham messages: ~30%
 
-## 🛡️ Security Considerations
+##  Security Considerations
 
 - API should be deployed behind authentication in production
 - Consider rate limiting for the prediction endpoints
 - Sanitize user inputs to prevent injection attacks
 - Use HTTPS in production environments
 
-## 🤝 Contributing
+##  Contributing
 
 To contribute to this project:
 
@@ -264,17 +264,17 @@ To contribute to this project:
 4. Add tests for new functionality
 5. Submit a pull request
 
-## 📄 License
+##  License
 
 This project is provided for educational and research purposes.
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - Dataset created specifically for South African spam patterns
 - Built with scikit-learn and Flask
 - Inspired by real-world spam detection challenges
 
-## 📞 Support
+## Support
 
 For questions or issues:
 - Check the documentation in this README
@@ -283,4 +283,4 @@ For questions or issues:
 
 ---
 
-**Built with ❤️ for spam-free inboxes**
+**Built with  for spam-free inboxes**
