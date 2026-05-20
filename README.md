@@ -1,8 +1,8 @@
-# South African Spam Email Classifier 🇿🇦
+# Spam Email Classifier 🇿🇦
 
 A machine learning-powered spam email classifier specifically trained on South African spam patterns. This project includes data preprocessing, model training, evaluation, and a REST API for real-time predictions.
 
-## 📋 Project Overview
+## Project Overview
 
 This spam classifier uses Natural Language Processing (NLP) and Machine Learning to identify spam emails. The model is trained on a dataset of 100,000 South African emails containing local spam patterns such as:
 
@@ -40,7 +40,7 @@ spam-classifier/
 └── README.md          # This file
 ```
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
