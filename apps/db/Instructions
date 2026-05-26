@@ -1,0 +1,10 @@
+Host: localhost
+Port: 5432
+Username: postgres
+Password: admin
+
+#run in this order
+001_create_database.sql
+connect to email_classifier
+002_drop_tables.sql
+003_create_tables.sql
