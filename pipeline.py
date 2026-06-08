@@ -138,8 +138,8 @@ def train_and_evaluate(X_tr, X_te, y_tr, y_te, vec):
         mlflow.log_artifact('reports/figures/confusion_matrices.png','evaluation')
         mlflow.log_artifact('reports/figures/roc_curves.png','evaluation')
         mlflow.log_artifact('reports/figures/feature_importance.png','evaluation')
-        mlflow.sklearn.log_model(models['ensemble'], 'ensemble_model')
-        mlflow.sklearn.log_model(vec, 'tfidf_vectorizer')
+        mlflow.sklearn.log_model(models['ensemble'], name='ensemble_model')
+        mlflow.sklearn.log_model(vec, name='tfidf_vectorizer')
 
     import matplotlib.pyplot as plt
     plt.close('all')  # mandatory — prevents memory leak

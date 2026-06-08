@@ -119,8 +119,9 @@ def plot_eda(df: pd.DataFrame) -> None:
     # ── 1. class distribution ────────────────────────────────
     class_counts = df['label'].value_counts()
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-    sns.countplot(data=df, x='label',
-                  palette={'ham':'#1D9E75', 'spam':'#E24B4A'}, ax=axes[0])
+    sns.countplot(data=df, x='label', hue='label',
+              palette={'ham':'#1D9E75', 'spam':'#E24B4A'},
+              legend=False, ax=axes[0])
     for c in axes[0].containers: axes[0].bar_label(c, fmt='%d')
     axes[0].set_title('Class distribution — count')
     axes[1].pie(class_counts, labels=class_counts.index,

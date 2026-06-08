@@ -52,14 +52,13 @@ def train_models(X_train, y_train, random_state: int = 42) -> dict:
     ensemble.estimators_ (list of (name, estimator) tuples).
     """
     # ── Individual models (notebook §6 hyperparameters) ───────────────────────
+    # after
+    # remove n_jobs=-1
     lr = LogisticRegression(
-        max_iter=1000,
-        random_state=random_state,
-        n_jobs=-1,
-        C=1.0,
-        solver="liblinear",         
+    max_iter=1000, C=1.0,
+    solver='liblinear',
+    random_state=random_state
     )
-
     nb = MultinomialNB(alpha=1.0)   
 
     svm = LinearSVC(
