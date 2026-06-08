@@ -72,6 +72,7 @@ def check_data_quality(df: pd.DataFrame) -> dict:
     if n_dupes > 0:
         print(f'WARNING: {n_dupes:,} duplicate rows found ({report["duplicate_rows_pct"]}%). '
               f'Dropping them before training.')
+        df = df.drop_duplicates(subset=['subject', 'body']).reset_index(drop=True)
 
     # ── class distribution (your notebook Section 3) ────────
     class_counts = df['label'].value_counts()
@@ -89,7 +90,7 @@ def check_data_quality(df: pd.DataFrame) -> dict:
               f'Consider oversampling or class weights.')
 
     # ── text length stats (your notebook Section 3) ─────────
-    df = df.drop_duplicates(subset = ['subject', 'body'])
+
     df['full_text']   = df['subject'].fillna('') + ' ' + df['body'].fillna('')
     df['text_length'] = df['full_text'].str.len()
     df['word_count']  = df['full_text'].str.split().str.len()
