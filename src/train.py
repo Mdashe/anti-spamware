@@ -79,14 +79,20 @@ def train_models(X_train, y_train, random_state: int = 42) -> dict:
             ("svm", svm),
         ],
         voting="hard",
-        n_jobs=-1,
+        # Use single-process fit to avoid scipy/numpy writeback-if-copy
+        # errors that occur when sharing sparse arrays across processes.
+        n_jobs=1,
     )
     ensemble.fit(X_train, y_train)
+    # VotingClassifier.fit() trains cloned sub-estimators. The fitted
+    # estimators are available via `ensemble.named_estimators_` mapping
+    # names to fitted estimator instances.
+    fitted = getattr(ensemble, "named_estimators_", {})
 
     return {
-        "lr":       lr,
-        "nb":       nb,
-        "svm":      svm,
+        "lr":       fitted.get("lr", lr),
+        "nb":       fitted.get("nb", nb),
+        "svm":      fitted.get("svm", svm),
         "ensemble": ensemble,
     }
 

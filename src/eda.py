@@ -66,8 +66,8 @@ def check_data_quality(df: pd.DataFrame) -> dict:
         )
 
     # ── duplicate rows ───────────────────────────────────────
-    n_dupes = df.duplicated().sum()
-    report['duplicate_rows']     = int(n_dupes)
+    n_dupes = df.duplicated(subset = ['subject', 'body']).sum()
+    report['duplicate_rows'] = int(n_dupes)
     report['duplicate_rows_pct'] = round(n_dupes / len(df) * 100, 2)
     if n_dupes > 0:
         print(f'WARNING: {n_dupes:,} duplicate rows found ({report["duplicate_rows_pct"]}%). '
@@ -89,7 +89,7 @@ def check_data_quality(df: pd.DataFrame) -> dict:
               f'Consider oversampling or class weights.')
 
     # ── text length stats (your notebook Section 3) ─────────
-    df = df.copy()
+    df = df.drop_duplicates(subset = ['subject', 'body'])
     df['full_text']   = df['subject'].fillna('') + ' ' + df['body'].fillna('')
     df['text_length'] = df['full_text'].str.len()
     df['word_count']  = df['full_text'].str.split().str.len()

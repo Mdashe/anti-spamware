@@ -15,16 +15,17 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
-COPY data/ ./data/
-COPY src/ ./src/
-COPY models/ ./models/
+# Download NLTK resources required by preprocess.py
+RUN python -m nltk.downloader stopwords wordnet
 
-# Expose port for Flask API
-EXPOSE 5000
+# Copy project files into the container
+COPY . /app
 
 # Set Python path
 ENV PYTHONPATH=/app
 
-# Default command runs the API
-CMD ["python", "src/api.py"]
+# Expose a port if you later add an API server
+EXPOSE 5000
+
+# Default command runs the training pipeline
+CMD ["python", "pipeline.py"]
