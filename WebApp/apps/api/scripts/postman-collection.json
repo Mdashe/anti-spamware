@@ -1,0 +1,132 @@
+{
+  "info": {
+    "name": "Anti-Spamware API (DB Store)",
+    "description": "Insert endpoints for email_classifier database. Start API with: go run ./cmd/server",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "userId", "value": "1" },
+    { "key": "accountId", "value": "1" },
+    { "key": "emailId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health"
+          }
+        },
+        {
+          "name": "GET /health/db",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health/db"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "POST /api/v1/users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  pm.collectionVariables.set('userId', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"postman@example.com\",\n  \"name\": \"Postman User\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/users"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Emails",
+      "item": [
+        {
+          "name": "POST /api/v1/emails",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var json = pm.response.json();",
+                  "  pm.collectionVariables.set('emailId', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}},\n  \"account_id\": {{accountId}},\n  \"provider_email_id\": \"gmail_123456\",\n  \"thread_id\": \"thread_123\",\n  \"subject\": \"Project Update\",\n  \"sender\": \"john@example.com\",\n  \"recipients\": [\"postman@example.com\"],\n  \"snippet\": \"Quick update on the project\",\n  \"received_at\": \"2026-06-08T10:00:00Z\",\n  \"cached_body\": \"Full email body here\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/emails"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Classifications",
+      "item": [
+        {
+          "name": "POST /api/v1/classifications",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email_id\": {{emailId}},\n  \"label\": \"spam\",\n  \"confidence\": 0.9821,\n  \"model_version\": \"v1.0\",\n  \"source\": \"model\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/classifications"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rules",
+      "item": [
+        {
+          "name": "POST /api/v1/rules",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{userId}},\n  \"name\": \"Spam Keywords\",\n  \"condition_type\": \"subject_contains\",\n  \"condition_value\": \"lottery\",\n  \"action\": \"mark_spam\",\n  \"enabled\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/rules"
+          }
+        }
+      ]
+    }
+  ]
+}
