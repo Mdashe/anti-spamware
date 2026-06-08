@@ -1,160 +1,220 @@
 """
-Interactive prediction script for spam classifier.
+src/predict.py
+--------------
+Inference for the SA spam/ham classifier.
 
-This module loads a trained spam classification model and TF-IDF vectorizer,
-then exposes a command-line interface for single-message classification.
-It also supports probability output for confidence reporting.
+Direct translation of notebook §9 predict_spam() function.
+
+The logic is identical to the notebook:
+  1. Combine subject + body
+  2. Call preprocess_text()
+  3. Vectorise with the saved TfidfVectorizer
+  4. Call the selected model's .predict()
+  5. Get confidence via .predict_proba() if available (LR, NB)
+     or None if not (SVM/LinearSVC, hard-voting Ensemble)
+  6. Return a dict with 6 fields matching the notebook result dict
+
+Structural changes from the notebook:
+  - Models come from the MLflow registry instead of notebook globals
+  - SpamClassifier class wraps the logic so it can be instantiated
+    independently of any notebook session
+  - PredictionResult dataclass gives the result dict type safety
+  - predict_batch() added for classifying multiple emails at once
+  - subject and body are separate parameters (API sends them separately)
 """
 
-import pickle
-import sys
-from pathlib import Path
-import logging
+from __future__ import annotations
 
-# Add parent directory to path
-sys.path.append(str(Path(__file__).parent))
-from preprocess import TextPreprocessor
+from dataclasses import dataclass, asdict
+from typing import Optional
 
-# Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+import mlflow.sklearn
+
+from src.preprocess import preprocess_text
 
 
-class SpamPredictor:
-    """Spam prediction interface using trained model."""
-    
-    def __init__(self, model_path, vectorizer_path):
+# ── Result dataclass ──────────────────────────────────────────────────────────
+# Same 6 fields as the notebook §9 result dict.
+# predict_spam() returned:
+#   {'prediction', 'prediction_code', 'confidence',
+#    'model_used', 'original_text', 'processed_text'}
+
+@dataclass
+class PredictionResult:
+    prediction:      str             # 'SPAM' or 'HAM'
+    prediction_code: int             # 1 = spam, 0 = ham (matches notebook encoding)
+    confidence:      Optional[float] # probability of predicted class; None for SVM/Ensemble
+    model_used:      str             # 'lr', 'nb', 'svm', or 'ensemble'
+    original_text:   str             # raw input as received (subject + body)
+    processed_text:  str             # after preprocess_text()
+
+    def to_dict(self) -> dict:
+        """Return as plain dict — used by the FastAPI response."""
+        return asdict(self)
+
+
+# ── Classifier ────────────────────────────────────────────────────────────────
+
+class SpamClassifier:
+    """
+    Loads the production model + vectorizer from the MLflow registry
+    and exposes predict() and predict_batch().
+
+    Instantiation loads models once. Do NOT instantiate inside a
+    request handler or pipeline task — load once at startup.
+
+    Usage
+    -----
+        classifier = SpamClassifier()                    # loads Production
+        classifier = SpamClassifier(stage='Staging')     # loads Staging for testing
+
+        result = classifier.predict(
+            subject='WIN R1,000,000!',
+            body='Click here to claim your prize',
+            model='ensemble',
+        )
+        print(result.prediction)  # 'SPAM'
+        print(result.confidence)  # None (hard-voting ensemble has no predict_proba)
+    """
+
+    VALID_MODELS = ("lr", "nb", "svm", "ensemble")
+
+    def __init__(self, stage: str = "Production") -> None:
         """
-        Initialize predictor with trained model and vectorizer.
-        
-        Args:
-            model_path: Path to trained model pickle file
-            vectorizer_path: Path to TF-IDF vectorizer pickle file
-        """
-        self.preprocessor = TextPreprocessor()
-        self.model = self._load_model(model_path)
-        self.vectorizer = self._load_vectorizer(vectorizer_path)
-    
-    def _load_model(self, model_path):
-        """Load trained model from pickle file."""
-        logger.info(f"Loading model from {model_path}")
-        with open(model_path, 'rb') as f:
-            model = pickle.load(f)
-        return model
-    
-    def _load_vectorizer(self, vectorizer_path):
-        """Load TF-IDF vectorizer from pickle file."""
-        logger.info(f"Loading vectorizer from {vectorizer_path}")
-        with open(vectorizer_path, 'rb') as f:
-            vectorizer = pickle.load(f)
-        return vectorizer
-    
-    def predict(self, message, return_proba=False):
-        """
-        Predict if a message is spam or ham.
-        
-        Args:
-            message: Text message to classify
-            return_proba: If True, return probability scores
-        
-        Returns:
-            Prediction ('spam' or 'ham') and optionally probability scores
-        """
-        # Preprocess the message
-        processed_message = self.preprocessor.preprocess(message)
-        
-        # Vectorize
-        message_tfidf = self.vectorizer.transform([processed_message])
-        
-        # Predict
-        prediction = self.model.predict(message_tfidf)[0]
-        label = 'spam' if prediction == 1 else 'ham'
-        
-        if return_proba:
-            probabilities = self.model.predict_proba(message_tfidf)[0]
-            return label, {
-                'ham_probability': probabilities[0],
-                'spam_probability': probabilities[1]
-            }
-        
-        return label
-    
-    def predict_batch(self, messages):
-        """
-        Predict multiple messages at once.
-        
-        Args:
-            messages: List of text messages to classify
-        
-        Returns:
-            List of predictions
-        """
-        # Preprocess all messages
-        processed_messages = [self.preprocessor.preprocess(msg) for msg in messages]
-        
-        # Vectorize
-        messages_tfidf = self.vectorizer.transform(processed_messages)
-        
-        # Predict
-        predictions = self.model.predict(messages_tfidf)
-        
-        # Convert to labels
-        labels = ['spam' if pred == 1 else 'ham' for pred in predictions]
-        
-        return labels
+        Load ensemble model and TF-IDF vectorizer from MLflow registry.
 
+        Parameters
+        ----------
+        stage : 'Production' for live serving, 'Staging' for pre-production testing.
+                Must match a registered stage in the MLflow Model Registry.
+        """
+        self.model = mlflow.sklearn.load_model(
+            f"models:/spam_ensemble/{stage}"
+        )
+        self.vectorizer = mlflow.sklearn.load_model(
+            f"models:/tfidf_vectorizer/{stage}"
+        )
+        self.stage = stage
 
-def main():
-    """Interactive prediction interface."""
-    # Define paths
-    project_root = Path(__file__).parent.parent
-    model_path = project_root / 'models' / 'model.pkl'
-    vectorizer_path = project_root / 'models' / 'vectorizer.pkl'
-    
-    # Check if model exists
-    if not model_path.exists() or not vectorizer_path.exists():
-        logger.error("Model files not found. Please run train.py first.")
-        return
-    
-    # Initialize predictor
-    predictor = SpamPredictor(model_path, vectorizer_path)
-    
-    print("\n" + "="*60)
-    print("SPAM CLASSIFIER - Interactive Prediction")
-    print("="*60)
-    print("\nEnter a message to classify (or 'quit' to exit)")
-    print("-"*60 + "\n")
-    
-    while True:
-        try:
-            # Get user input
-            message = input("Message: ").strip()
-            
-            if message.lower() in ['quit', 'exit', 'q']:
-                print("\nGoodbye!")
-                break
-            
-            if not message:
-                print("Please enter a message.\n")
-                continue
-            
-            # Make prediction
-            label, probabilities = predictor.predict(message, return_proba=True)
-            
-            # Display results
-            print(f"\nPrediction: {label.upper()}")
-            print(f"Confidence:")
-            print(f"  - Ham:  {probabilities['ham_probability']*100:.2f}%")
-            print(f"  - Spam: {probabilities['spam_probability']*100:.2f}%")
-            print("-"*60 + "\n")
-            
-        except KeyboardInterrupt:
-            print("\n\nGoodbye!")
-            break
-        except Exception as e:
-            logger.error(f"Error during prediction: {e}")
-            print(f"\nError: {e}\n")
+    def predict(
+        self,
+        subject: str = "",
+        body:    str = "",
+        model:   str = "ensemble",
+    ) -> PredictionResult:
+        """
+        Classify a single email.
 
+        Mirrors notebook §9 predict_spam() exactly.
 
-if __name__ == "__main__":
-    main()
+        Parameters
+        ----------
+        subject : email subject line (may be empty string)
+        body    : email body text   (may be empty string)
+        model   : which estimator to use — 'lr', 'nb', 'svm', or 'ensemble'
+                  Default 'ensemble' matches the notebook default.
+
+        Returns
+        -------
+        PredictionResult with the same 6 fields as the notebook result dict.
+
+        Raises
+        ------
+        ValueError : if model is not one of VALID_MODELS
+        ValueError : if email is empty after preprocessing
+        """
+        if model not in self.VALID_MODELS:
+            raise ValueError(
+                f"model must be one of {self.VALID_MODELS}, got '{model}'"
+            )
+
+        # Notebook concatenated subject + body before calling preprocess_text()
+        raw_text       = (subject + " " + body).strip()
+        processed_text = preprocess_text(raw_text)
+
+        if not processed_text:
+            raise ValueError(
+                "Email is empty after preprocessing — nothing to classify. "
+                "Check that subject and body contain actual text."
+            )
+
+        # Vectorise (notebook: text_tfidf = tfidf_vectorizer.transform([processed_text]))
+        X = self.vectorizer.transform([processed_text])
+
+        # Select estimator (notebook: model_map.get(model, ensemble_model))
+        estimator = self._get_estimator(model)
+
+        # Predict (notebook: prediction = selected_model.predict(text_tfidf)[0])
+        pred_code = int(estimator.predict(X)[0])
+
+        # Confidence (notebook: if hasattr(selected_model, 'predict_proba'):)
+        if hasattr(estimator, "predict_proba"):
+            probas     = estimator.predict_proba(X)[0]
+            confidence = float(probas[pred_code])
+        else:
+            # LinearSVC and hard-voting VotingClassifier have no predict_proba
+            confidence = None
+
+        return PredictionResult(
+            prediction      = "SPAM" if pred_code == 1 else "HAM",
+            prediction_code = pred_code,
+            confidence      = confidence,
+            model_used      = model,
+            original_text   = raw_text,
+            processed_text  = processed_text,
+        )
+
+    def predict_batch(
+        self,
+        emails: list[dict],
+        model:  str = "ensemble",
+    ) -> list[PredictionResult]:
+        """
+        Classify a list of emails.
+
+        Not in the notebook — added for production use cases where a
+        mail server or batch job submits many emails in one call.
+
+        Parameters
+        ----------
+        emails : list of dicts, each with 'subject' and 'body' keys.
+                 Missing keys default to empty string.
+
+        Example
+        -------
+            results = classifier.predict_batch([
+                {'subject': 'WIN NOW', 'body': 'Click here'},
+                {'subject': 'Meeting', 'body': '3pm tomorrow'},
+            ])
+        """
+        return [
+            self.predict(
+                subject=e.get("subject", ""),
+                body   =e.get("body",    ""),
+                model  =model,
+            )
+            for e in emails
+        ]
+
+    def _get_estimator(self, model: str):
+        """
+        Return the named estimator.
+
+        'ensemble' returns the VotingClassifier directly.
+        'lr', 'nb', 'svm' pull the sub-estimator from
+        VotingClassifier.estimators_ — the same objects that were fitted,
+        equivalent to the notebook's lr_model / nb_model / svm_model globals.
+        """
+        if model == "ensemble":
+            return self.model
+
+        # VotingClassifier stores fitted sub-estimators as:
+        # [(name, estimator), ...] in self.model.estimators_
+        name_map = {name: est for name, est in self.model.estimators_}
+
+        if model not in name_map:
+            raise ValueError(
+                f"'{model}' not found in ensemble. "
+                f"Available: {list(name_map.keys())}"
+            )
+        return name_map[model]
