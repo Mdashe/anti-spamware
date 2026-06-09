@@ -15,14 +15,37 @@ import re
 import string
 
 import pandas as pd
+import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+
+
+def _ensure_nltk_resource(resource_path: str) -> None:
+    """Download an NLTK resource if it is not already available."""
+    try:
+        nltk.data.find(resource_path)
+    except LookupError:
+        nltk.download(resource_path.split("/")[-1], quiet=True)
+
 
 # ── Created ONCE when this module is imported ─────────────────────────────────
 # Notebook had these inside preprocess_text(), creating a new object
 # for every single email. Moving them here costs nothing extra.
+_ensure_nltk_resource("corpora/stopwords")
+_ensure_nltk_resource("corpora/wordnet")
 _lemmatizer = WordNetLemmatizer()
 _stop_words = set(stopwords.words("english"))
+
+
+def combine_email(subject: str, body: str) -> str:
+    """Combine email subject and body into a single text string."""
+    if pd.isna(subject) and pd.isna(body):
+        return ""
+    if pd.isna(subject):
+        return str(body)
+    if pd.isna(body):
+        return str(subject)
+    return f"{subject} {body}"
 
 
 def preprocess_text(text: str) -> str:

@@ -6,7 +6,7 @@
 # Notebook source for each value is noted in comments.
 
 data:
-  raw_path: data/raw/sa_spam_dataset.csv   # replaces: from google.colab import files
+  raw_path: data/raw/sa_spam_dataset_100k.csv   # replaces: from google.colab import files
   processed_path: data/processed/
   test_size: 0.2                            # notebook §5: test_size=0.2
 

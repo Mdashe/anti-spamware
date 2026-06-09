@@ -66,12 +66,13 @@ def check_data_quality(df: pd.DataFrame) -> dict:
         )
 
     # ── duplicate rows ───────────────────────────────────────
-    n_dupes = df.duplicated().sum()
-    report['duplicate_rows']     = int(n_dupes)
+    n_dupes = df.duplicated(subset = ['subject', 'body']).sum()
+    report['duplicate_rows'] = int(n_dupes)
     report['duplicate_rows_pct'] = round(n_dupes / len(df) * 100, 2)
     if n_dupes > 0:
         print(f'WARNING: {n_dupes:,} duplicate rows found ({report["duplicate_rows_pct"]}%). '
               f'Dropping them before training.')
+        df = df.drop_duplicates(subset=['subject', 'body']).reset_index(drop=True)
 
     # ── class distribution (your notebook Section 3) ────────
     class_counts = df['label'].value_counts()
@@ -89,7 +90,7 @@ def check_data_quality(df: pd.DataFrame) -> dict:
               f'Consider oversampling or class weights.')
 
     # ── text length stats (your notebook Section 3) ─────────
-    df = df.copy()
+
     df['full_text']   = df['subject'].fillna('') + ' ' + df['body'].fillna('')
     df['text_length'] = df['full_text'].str.len()
     df['word_count']  = df['full_text'].str.split().str.len()
@@ -118,8 +119,9 @@ def plot_eda(df: pd.DataFrame) -> None:
     # ── 1. class distribution ────────────────────────────────
     class_counts = df['label'].value_counts()
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-    sns.countplot(data=df, x='label',
-                  palette={'ham': '#1D9E75', 'spam': '#E24B4A'}, ax=axes[0])
+    sns.countplot(data=df, x='label', hue='label',
+              palette={'ham':'#1D9E75', 'spam':'#E24B4A'},
+              legend=False, ax=axes[0])
     for c in axes[0].containers: axes[0].bar_label(c, fmt='%d')
     axes[0].set_title('Class distribution — count')
     axes[1].pie(class_counts, labels=class_counts.index,
