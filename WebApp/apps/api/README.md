@@ -9,8 +9,8 @@ REST endpoints that call PostgreSQL insert stored procedures.
 ## Prerequisites
 
 1. **Go 1.22+** installed
-2. **PostgreSQL** running on `localhost:5432`
-3. Database **`email_classifier`** created with tables and insert functions applied
+2. **PostgreSQL** running on `localhost:5433`
+3. Database **`postgres`** with tables and insert functions applied
 
 ### One-time database setup
 
@@ -29,7 +29,7 @@ From `WebApp/apps/db/`, run scripts in order (psql or pgAdmin):
 Default credentials (see `WebApp/apps/db/Instructions`):
 
 ```text
-postgres / admin @ localhost:5432 / email_classifier
+postgres / admin @ localhost:5433 / postgres
 ```
 
 ---
@@ -44,7 +44,7 @@ go run ./cmd/server
 Optional: copy env vars from `.env.example`:
 
 ```powershell
-$env:DATABASE_URL = "postgres://postgres:admin@localhost:5432/email_classifier?sslmode=disable"
+$env:DATABASE_URL = "postgres://postgres:admin@localhost:5433/postgres?sslmode=disable"
 $env:PORT = "8080"
 go run ./cmd/server
 ```

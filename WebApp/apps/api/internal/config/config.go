@@ -15,7 +15,7 @@ func Load() Config {
 
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		dbURL = "postgres://postgres:admin@localhost:5432/email_classifier?sslmode=disable"
+		dbURL = "postgres://postgres:admin@localhost:5433/postgres?sslmode=disable"
 	}
 
 	return Config{

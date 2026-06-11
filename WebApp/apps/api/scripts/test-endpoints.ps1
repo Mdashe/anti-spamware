@@ -44,7 +44,7 @@ $userId = $user.id
 # Email account (direct SQL — fn_email_account_insert not ready yet)
 $pgBin = $env:PG_BIN
 if (-not $pgBin) { $pgBin = "psql" }
-$dbUrl = if ($env:DATABASE_URL) { $env:DATABASE_URL } else { "postgres://postgres:admin@localhost:5432/email_classifier?sslmode=disable" }
+$dbUrl = if ($env:DATABASE_URL) { $env:DATABASE_URL } else { "postgres://postgres:admin@localhost:5433/postgres?sslmode=disable" }
 
 $sql = "INSERT INTO email_accounts (user_id, provider, provider_email) VALUES ($userId, 'gmail', '$email') RETURNING id;"
 $accountResult = & $pgBin $dbUrl -t -A -c $sql 2>&1
