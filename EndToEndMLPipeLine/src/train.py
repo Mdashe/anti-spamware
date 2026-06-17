@@ -89,9 +89,9 @@ def train_models(X_train, y_train, random_state: int = 42) -> dict:
     fitted = getattr(ensemble, "named_estimators_", {})
 
     return {
-        "lr":       fitted.get("lr", lr),
-        "nb":       fitted.get("nb", nb),
-        "svm":      fitted.get("svm", svm),
+        "lr": fitted.get("lr", lr),
+        "nb": fitted.get("nb", nb),
+        "svm": fitted.get("svm", svm),
         "ensemble": ensemble,
     }
 
@@ -136,9 +136,9 @@ def register_best_model(run_id: str, metrics: dict, thresholds: dict) -> None:
       - recall    >= thresholds['min_recall']
     """
     passes = (
-        metrics["f1"]        >= thresholds["min_f1"]
+        metrics["f1"] >= thresholds["min_f1"]
         and metrics["precision"] >= thresholds["min_precision"]
-        and metrics["recall"]    >= thresholds["min_recall"]
+        and metrics["recall"] >= thresholds["min_recall"]
     )
 
     if passes:

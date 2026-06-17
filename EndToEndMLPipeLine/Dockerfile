@@ -1,31 +1,15 @@
-# Use Python 3.9 slim image as base
-FROM python:3.9-slim
-
-# Set working directory
+FROM python:3.11-slim
 WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements first for better caching
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Download NLTK resources required by preprocess.py
-RUN python -m nltk.downloader stopwords wordnet
+# Download NLTK resources at BUILD TIME — not at runtime
+# Without this, the container crashes on first prediction (no internet in Docker)
+RUN python -m nltk.downloader stopwords wordnet punkt omw-1.4
 
-# Copy project files into the container
-COPY . /app
+COPY src/ ./src/
+COPY api/ ./api/
+COPY configs/ ./configs/
 
-# Set Python path
-ENV PYTHONPATH=/app
-
-# Expose a port if you later add an API server
-EXPOSE 5000
-
-# Default command runs the training pipeline
-CMD ["python", "pipeline.py"]
+EXPOSE 8080
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080"]

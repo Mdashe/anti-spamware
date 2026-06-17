@@ -32,6 +32,9 @@ import mlflow.sklearn
 
 from src.preprocess import preprocess_text
 
+import mlflow
+mlflow.set_tracking_uri('http://127.0.0.1:5000')
+
 
 # ── Result dataclass ──────────────────────────────────────────────────────────
 # Same 6 fields as the notebook §9 result dict.
@@ -96,12 +99,7 @@ class SpamClassifier:
         )
         self.stage = stage
 
-    def predict(
-        self,
-        subject: str = "",
-        body:    str = "",
-        model:   str = "ensemble",
-    ) -> PredictionResult:
+    def predict(self, subject: str = "", body:    str = "",model:   str = "ensemble",) -> PredictionResult:
         """
         Classify a single email.
 

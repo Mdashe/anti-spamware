@@ -48,15 +48,15 @@ def check_data_quality(df: pd.DataFrame) -> dict:
     report = {}
 
     # ── shape ───────────────────────────────────────────────
-    report['total_rows']    = len(df)
+    report['total_rows'] = len(df)
     report['total_columns'] = len(df.columns)
-    report['columns']       = list(df.columns)
+    report['columns'] = list(df.columns)
 
     # ── missing values (your notebook Section 2) ────────────
-    missing       = df.isnull().sum()
-    missing_pct   = (missing / len(df) * 100).round(2)
+    missing = df.isnull().sum()
+    missing_pct = (missing / len(df) * 100).round(2)
     report['missing_counts'] = missing.to_dict()
-    report['missing_pct']    = missing_pct.to_dict()
+    report['missing_pct'] = missing_pct.to_dict()
 
     # Hard stop: if the label column has ANY nulls, abort
     if df['label'].isnull().sum() > 0:
@@ -83,7 +83,7 @@ def check_data_quality(df: pd.DataFrame) -> dict:
     # Hard stop: if imbalance is extreme (>20:1), warn loudly
     spam_count = class_counts.get('spam', 0)
     ham_count  = class_counts.get('ham',  1)
-    ratio      = spam_count / ham_count
+    ratio = spam_count / ham_count
     report['imbalance_ratio'] = round(ratio, 3)
     if ratio > 20 or ratio < 0.05:
         print(f'WARNING: severe class imbalance detected (ratio={ratio:.2f}). '
@@ -91,7 +91,7 @@ def check_data_quality(df: pd.DataFrame) -> dict:
 
     # ── text length stats (your notebook Section 3) ─────────
 
-    df['full_text']   = df['subject'].fillna('') + ' ' + df['body'].fillna('')
+    df['full_text'] = df['subject'].fillna('') + ' ' + df['body'].fillna('')
     df['text_length'] = df['full_text'].str.len()
     df['word_count']  = df['full_text'].str.split().str.len()
     length_stats = df.groupby('label')[['text_length','word_count']].describe()
@@ -134,7 +134,7 @@ def plot_eda(df: pd.DataFrame) -> None:
 
     # ── 2. text length & word count distributions ────────────
     df = df.copy()
-    df['full_text']   = df['subject'].fillna('') + ' ' + df['body'].fillna('')
+    df['full_text'] = df['subject'].fillna('') + ' ' + df['body'].fillna('')
     df['text_length'] = df['full_text'].str.len()
     df['word_count']  = df['full_text'].str.split().str.len()
     fig, axes = plt.subplots(2, 2, figsize=(14, 9))

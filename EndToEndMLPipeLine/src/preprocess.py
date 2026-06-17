@@ -13,7 +13,6 @@ All SA-specific patterns are preserved verbatim from the notebook.
 
 import re
 import string
-
 import pandas as pd
 import nltk
 from nltk.corpus import stopwords

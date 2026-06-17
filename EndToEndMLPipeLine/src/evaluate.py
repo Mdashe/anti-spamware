@@ -178,7 +178,7 @@ def plot_roc_curves(models_proba: dict, y_true) -> plt.Figure:
 
 # ── Feature importance ────────────────────────────────────────────────────────
 
-def plot_feature_importance(lr_model, vectorizer, top_n: int = 15) -> plt.Figure:
+def plot_feature_importance(lr_model, vectorizer, top_n: int = 20) -> plt.Figure:
     """
     Logistic Regression coefficient bar charts — top spam and ham indicators.
 
@@ -190,7 +190,7 @@ def plot_feature_importance(lr_model, vectorizer, top_n: int = 15) -> plt.Figure
     ----------
     lr_model   : fitted LogisticRegression (from train_models()['lr'])
     vectorizer : fitted TfidfVectorizer (from features.build_vectorizer())
-    top_n      : number of top features to show (notebook used 15)
+    top_n      : number of top features to show (notebook used 20)
 
     Returns
     -------
