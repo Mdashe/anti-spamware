@@ -1,0 +1,64 @@
+name: CI/CD
+
+on:
+  push:         { branches: [main, develop] }
+  pull_request: { branches: [main] }
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r requirements.txt pytest flake8
+      - run: flake8 src/ api/ --max-line-length 100
+      - run: pytest tests/ -v --tb=short
+
+  retrain-and-build:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # No remote MLflow server yet -- use a local file-based tracking
+      # URI so the pipeline can run inside the GitHub runner without
+      # any external service. Swap for your real MLFLOW_TRACKING_URI
+      # once you deploy a server somewhere.
+      - name: Run training pipeline
+        run: python pipeline.py
+        env:
+          MLFLOW_TRACKING_URI: file:./mlruns
+
+      # Quality gate. register_best_model() (Phase 4) only registers
+      # a Staging version if F1/precision/recall pass the thresholds
+      # in configs/config.yaml. If nothing was registered this run,
+      # stop here -- never build an image from a model that failed
+      # the gate.
+      - name: Check model passed registry quality gate
+        run: |
+          python -c "
+          import sys, mlflow
+          from mlflow.tracking import MlflowClient
+          mlflow.set_tracking_uri('file:./mlruns')
+          versions = MlflowClient().get_latest_versions('spam_ensemble', stages=['Staging'])
+          if not versions:
+              print('No model passed the quality gate this run -- skipping image build.')
+              sys.exit(1)
+          print('Model v' + versions[0].version + ' passed gate.')
+          "
+
+      # Build the image so it is ready to push the moment you have
+      # somewhere to push it to (ECR, Docker Hub, etc). No push step
+      # yet -- add one once a registry exists.
+      - name: Build Docker image
+        run: docker build -t spam-classifier:${{ github.sha }} .
+
+      - name: Confirm image built
+        run: docker images spam-classifier:${{ github.sha }}
